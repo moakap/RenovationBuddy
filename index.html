@@ -1,32 +1,25 @@
-<!-- index.html -->
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
-  <title>装修验收</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>装修验收</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
-  <div id="auth-container">
-    <h1>装修验收小程序</h1>
-    <button id="login-btn">登录</button>
-    <button id="logout-btn" style="display:none;">登出</button>
-    <div id="user-info" style="display:none;">
-      <p>欢迎，<span id="user-name"></span></p>
-    </div>
-  </div>
-
-  <!-- Firebase 8.x SDK -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
-
-  <!-- 引入 Firebase 配置文件 -->
-  <script src="firebaseConfig.js"></script>
-
-  <!-- 引入项目的 JavaScript 逻辑 -->
-  <script src="script.js"></script>
+    <header>
+        <h1>装修验收</h1>
+        <button id="login-btn">登录</button>
+    </header>
+    <main>
+        <h2>验收项目</h2>
+        <ul id="steps-list">
+            <!-- 验收步骤列表 -->
+        </ul>
+        <button id="add-step-btn">添加验收步骤</button>
+    </main>
+    <script src="app.js">
+    </script>
 </body>
 </html>

@@ -1,38 +1,41 @@
-/* style.css */
 body {
   font-family: Arial, sans-serif;
-  margin: 20px;
-  background-color: #f5f5f5;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-h1 {
+header {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
   text-align: center;
+}
+
+main {
+  padding: 20px;
 }
 
 button {
   background-color: #4CAF50;
   color: white;
-  padding: 10px 20px;
   border: none;
+  padding: 10px;
   cursor: pointer;
+  margin-top: 10px;
 }
 
 button:hover {
   background-color: #45a049;
 }
 
-#verification-steps {
-  margin-top: 20px;
+ul {
+  list-style-type: none;
+  padding: 0;
 }
 
-.step {
-  background-color: white;
-  padding: 15px;
+ul li {
+  padding: 10px;
+  background-color: #f4f4f4;
   margin-bottom: 10px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-input[type="file"] {
-  margin-top: 10px;
 }

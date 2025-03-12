@@ -1,17 +1,25 @@
-<!-- verify.html -->
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
-  <title>装修验收</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验收 - 详细</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>验收步骤</h1>
-  <div id="verification-steps"></div>
-  <button id="add-step-btn">添加新步骤</button>
-
-  <script src="script.js"></script>
+    <header>
+        <h1>装修验收 - 步骤详细</h1>
+        <button id="logout-btn">注销</button>
+    </header>
+    <main>
+        <h2>步骤: <span id="step-name"></span></h2>
+        <textarea id="step-result" placeholder="填写验收结果..."></textarea>
+        <div>
+            <label for="image-upload">上传图片/视频：</label>
+            <input type="file" id="image-upload" accept="image/*,video/*">
+        </div>
+        <button id="submit-btn">提交验收结果</button>
+    </main>
+    <script src="app.js"></script>
 </body>
 </html>
