@@ -1,182 +1,501 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>装修验收助手</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        .container { max-width: 500px; margin: auto; padding: 20px; }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
         .hidden { display: none; }
-        button { padding: 10px; margin: 10px; cursor: pointer; }
-        ul { list-style-type: none; padding: 0; }
-        li { padding: 10px; background: #f4f4f4; margin: 5px 0; cursor: pointer; }
+        
+        .check-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        
+        .status-btn {
+            padding: 5px 10px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .pending { background-color: #ffd700; }
+        .passed { background-color: #90EE90; }
+        .failed { background-color: #ff6961; }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 20px;
+            margin: 20% auto;
+            width: 80%;
+        }
+        
+        .media-thumb {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            margin: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .button-group {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button[type="button"] {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .loading {
+            position: relative;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .loading::after {
+            content: " ";
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            margin-left: 0.5em;
+            vertical-align: middle;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #global-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            max-width: 80%;
+            display: none;
+            z-index: 1000;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #b71c1c;
+            border: 1px solid #ffcdd2;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .alert-show {
+            display: block;
+            animation: slideIn 0.3s, fadeOut 3s 0.3s;
+        }
+
+        @keyframes slideIn {
+            from { top: -50px; }
+            to { top: 20px; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
     </style>
-    
 </head>
 <body>
-    <div class="container">
-        <!-- 注册 & 登录 -->
-        <div id="auth-section">
-            <h2>欢迎使用装修验收助手</h2>
-            <input type="email" id="email" placeholder="邮箱">
-            <input type="password" id="password" placeholder="密码">
-            <button id="login-btn">登录</button>
-            <button id="signup-btn">注册</button>
+    <div id="loading-screen" class="container">
+        <div class="loader"></div>
+        <p>正在验证登录状态...</p>
+    </div>
+
+    <div id="auth-section" class="container">
+        <h1>装修验收助手</h1>
+        <form id="auth-forms" onsubmit="return false;">
+            <div class="form-group">
+                <label for="email">电子邮箱：</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">密码：</label>
+                <input type="password" id="password" required>
+            </div>
+            <div class="button-group">
+                <button type="button" onclick="handleLogin()">登录</button>
+                <button type="button" onclick="handleSignup()">注册</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="main-app" class="container hidden">
+        <div class="header">
+            <h1>装修验收助手 <button onclick="logout()">登出</button></h1>
+            <div class="add-form">
+                <input type="text" id="item-name" placeholder="项目名称">
+                <textarea id="item-desc" placeholder="项目描述"></textarea>
+                <button onclick="addCheckItem()"><i class="fas fa-plus"></i> 添加验收项</button>
+            </div>
         </div>
 
-        <!-- 验收步骤列表 -->
-        <div id="steps-section" class="hidden">
-            <h2>验收步骤</h2>
-            <ul id="steps-list"></ul>
-            <button id="add-step-btn">添加新验收步骤</button>
-            <button id="view-results-btn">查看验收历史</button>
-            <button id="logout-btn">退出</button>
-        </div>
-
-        <!-- 录入验收结果 -->
-        <div id="verify-section" class="hidden">
-            <h2>验收步骤: <span id="step-name"></span></h2>
-            <textarea id="step-result" placeholder="填写验收结果..."></textarea>
-            <input type="file" id="image-upload" accept="image/*,video/*">
-            <button id="submit-btn">提交验收结果</button>
-            <button onclick="showSteps()">返回</button>
-        </div>
-
-        <!-- 查看验收结果 -->
-        <div id="results-section" class="hidden">
-            <h2>验收历史</h2>
-            <ul id="result-list"></ul>
-            <button onclick="showSteps()">返回</button>
+        <div id="checklist"></div>
+        
+        <div id="upload-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close" onclick="closeUpload()">&times;</span>
+                <input type="file" id="file-input" accept="image/*,video/*">
+                <button onclick="uploadMedia()">上传</button>
+                <div id="preview"></div>
+            </div>
         </div>
     </div>
 
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script> -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
 
     <script>
-        const supabaseUrl = 'https://ebcslqzdvqicnooeeljp.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViY3NscXpkdnFpY25vb2VlbGpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3Njc4NzYsImV4cCI6MjA1NzM0Mzg3Nn0.Z6n7UTkhzDEJYyeIzf5h89cmqon3upDeYvJE_xGW7PU';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-        let currentStepId = null;
+        // const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        // const SUPABASE_KEY = 'YOUR_SUPABASE_KEY';
+        const SUPABASE_URL = 'https://ebcslqzdvqicnooeeljp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViY3NscXpkdnFpY25vb2VlbGpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3Njc4NzYsImV4cCI6MjA1NzM0Mzg3Nn0.Z6n7UTkhzDEJYyeIzf5h89cmqon3upDeYvJE_xGW7PU';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let currentItemId = null;
+        
+        // 
+        // 新增全局提示方法
+        function showAlert(message, type = 'error') {
+            const alertEl = document.getElementById('global-alert');
+            alertEl.className = `alert-${type} alert-show`;
+            alertEl.textContent = message;
+            
+            setTimeout(() => {
+                alertEl.classList.remove('alert-show');
+            }, 3000);
+        }
 
-        // 📌 检查登录状态
-        async function checkUser() {
-            const { data, error } = await supabase.auth.getUser();
-            if (data.user) {
-                showSteps();
-            } else {
-                showAuth();
+        // 身份验证处理
+        async function handleLogin() {
+            const btn = document.querySelector('#auth-forms button[onclick="handleLogin()"]');
+            try {
+                btn.classList.add('loading');
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                const { error } = await supabase.auth.signInWithPassword({ 
+                    email, 
+                    password 
+                });
+
+                if (error) throw error;
+                
+                showAlert('登录成功', 'success');
+            } catch (error) {
+                showAlert(`登录失败: ${error.message}`);
+            } finally {
+                btn.classList.remove('loading');
             }
         }
-        checkUser();
-
-        // 📌 显示登录/注册界面
-        function showAuth() {
-            document.getElementById("auth-section").classList.remove("hidden");
-            document.getElementById("steps-section").classList.add("hidden");
-            document.getElementById("verify-section").classList.add("hidden");
-            document.getElementById("results-section").classList.add("hidden");
+        
+        async function handleSignup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await supabase.auth.signUp({ email, password });
+            if (error) alert(error.message);
+            else alert('确认邮件已发送，请验证后登录');
         }
-
-        // 📌 显示验收步骤
-        function showSteps() {
-            document.getElementById("auth-section").classList.add("hidden");
-            document.getElementById("steps-section").classList.remove("hidden");
-            document.getElementById("verify-section").classList.add("hidden");
-            document.getElementById("results-section").classList.add("hidden");
-            fetchSteps();
-        }
-
-        // 📌 显示验收详情
-        function showVerify(stepId, stepName) {
-            currentStepId = stepId;
-            document.getElementById("step-name").textContent = stepName;
-            document.getElementById("steps-section").classList.add("hidden");
-            document.getElementById("verify-section").classList.remove("hidden");
-        }
-
-        // 📌 显示验收历史
-        function showResults() {
-            document.getElementById("steps-section").classList.add("hidden");
-            document.getElementById("results-section").classList.remove("hidden");
-            fetchResults();
-        }
-
-        // 📌 处理用户注册
-        document.getElementById("signup-btn").addEventListener("click", async () => {
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            await supabase.auth.signUp({ email, password });
-            alert("注册成功，请登录");
-        });
-
-        // 📌 处理用户登录
-        document.getElementById("login-btn").addEventListener("click", async () => {
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) alert("登录失败：" + error.message);
-            else showSteps();
-        });
-
-        // 📌 获取验收步骤
-        async function fetchSteps() {
-            const { data, error } = await supabase.from("steps").select("*");
-            if (error) return;
-            const stepsList = document.getElementById("steps-list");
-            stepsList.innerHTML = "";
-            data.forEach(step => {
-                const li = document.createElement("li");
-                li.textContent = step.name;
-                li.onclick = () => showVerify(step.id, step.name);
-                stepsList.appendChild(li);
-            });
-        }
-
-        // 📌 添加验收步骤
-        document.getElementById("add-step-btn").addEventListener("click", async () => {
-            const name = prompt("请输入新的验收步骤名称");
-            if (!name) return;
-            await supabase.from("steps").insert([{ name }]);
-            fetchSteps();
-        });
-
-        // 📌 提交验收结果
-        document.getElementById("submit-btn").addEventListener("click", async () => {
-            const resultText = document.getElementById("step-result").value;
-            const file = document.getElementById("image-upload").files[0];
-            let mediaUrl = "";
-
-            if (file) {
-                const { data, error } = await supabase.storage.from('uploads').upload(`uploads/${file.name}`, file);
-                if (!error) mediaUrl = `${supabaseUrl}/storage/v1/object/public/uploads/${data.path}`;
-            }
-
-            await supabase.from("results").insert([{ step_id: currentStepId, result: resultText, media_url: mediaUrl }]);
-            alert("提交成功！");
-            showSteps();
-        });
-
-        // 📌 获取验收历史
-        async function fetchResults() {
-            const { data, error } = await supabase.from("results").select("*");
-            if (error) return;
-            const resultList = document.getElementById("result-list");
-            resultList.innerHTML = "";
-            data.forEach(result => {
-                const li = document.createElement("li");
-                li.innerHTML = `<p>${result.result}</p>${result.media_url ? `<img src="${result.media_url}" width="100">` : ""}`;
-                resultList.appendChild(li);
-            });
-        }
-
-        // 📌 退出登录
-        document.getElementById("logout-btn").addEventListener("click", async () => {
+        
+        async function logout() {
             await supabase.auth.signOut();
-            showAuth();
+        }
+        
+        // 加载验收项目
+        async function loadChecklist() {
+            const { data: items } = await supabase
+                .from('check_items')
+                .select('*')
+                .eq('user_id', (await supabase.auth.getUser()).data.user.id);
+            
+            const checklist = document.getElementById('checklist');
+            checklist.innerHTML = '';
+            
+            items.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'check-item';
+                itemDiv.innerHTML = `
+                    <h3>${item.name}</h3>
+                    <p>${item.description}</p>
+                    <button class="status-btn ${item.status}" 
+                        onclick="updateStatus('${item.id}', '${item.status}')">
+                        ${item.status}
+                    </button>
+                    <button onclick="showUpload('${item.id}')">上传媒体</button>
+                    <div id="media-${item.id}"></div>
+                `;
+                checklist.appendChild(itemDiv);
+                loadMedia(item.id);
+            });
+        }
+        
+        // 添加验收项目
+        async function addCheckItem() {
+            const btn = document.querySelector('button[onclick="addCheckItem()"]');
+            try {
+                btn.classList.add('loading');
+                btn.disabled = true;
+
+                const name = document.getElementById('item-name').value;
+                const desc = document.getElementById('item-desc').value;
+                
+                if (!name.trim()) {
+                    throw new Error('项目名称不能为空');
+                }
+
+                // 获取当前用户
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    showAlert('请先登录', 'error');
+                    return;
+                }
+
+                const { error } = await supabase
+                    .from('check_items')
+                    .insert([{ 
+                        name,
+                        description: desc,
+                        user_id: user.id,
+                        status: 'pending'
+                    }])
+                    .select();
+
+                if (error) throw error;
+                
+                showAlert('项目添加成功', 'success');
+                loadChecklist();
+                document.getElementById('item-name').value = '';
+                document.getElementById('item-desc').value = '';
+            } catch (error) {
+                showAlert(`添加失败: ${error.message}`);
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+        
+        // 文件上传处理
+        function showUpload(itemId) {
+            currentItemId = itemId;
+            document.getElementById('upload-modal').classList.remove('hidden');
+        }
+        
+        async function uploadMedia() {
+            const btn = document.querySelector('#upload-modal button');
+            try {
+                btn.classList.add('loading');
+                btn.disabled = true;
+
+                const file = document.getElementById('file-input').files[0];
+                if (!file) {
+                    throw new Error('请选择要上传的文件');
+                }
+
+                const filePath = `${supabase.auth.user().id}/${currentItemId}/${Date.now()}_${file.name}`;
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('project-media')
+                    .upload(filePath, file);
+
+                if (uploadError) throw uploadError;
+
+                const { error: dbError } = await supabase
+                    .from('media_files')
+                    .insert([{
+                        item_id: currentItemId,
+                        url: filePath,
+                        type: file.type.startsWith('image') ? 'image' : 'video'
+                    }]);
+
+                if (dbError) throw dbError;
+
+                showAlert('文件上传成功', 'success');
+                loadMedia(currentItemId);
+                closeUpload();
+            } catch (error) {
+                showAlert(`上传失败: ${error.message}`);
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+        
+        // 加载媒体文件
+        async function loadMedia(itemId) {
+            const { data } = await supabase
+                .from('media_files')
+                .select('*')
+                .eq('item_id', itemId);
+            
+            const mediaDiv = document.getElementById(`media-${itemId}`);
+            mediaDiv.innerHTML = data.map(file => `
+                ${file.type === 'image' ? 
+                    `<img src="${SUPABASE_URL}/storage/v1/object/public/project-media/${file.url}" 
+                          class="media-thumb">` :
+                    `<video controls class="media-thumb">
+                        <source src="${SUPABASE_URL}/storage/v1/object/public/project-media/${file.url}">
+                     </video>`
+                }
+            `).join('');
+        }
+        
+        // 初始化
+        let authChecked = false;
+
+        async function initApp() {
+            // 显示加载状态
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
+
+            // 先尝试获取已有会话
+            const { data: { session }, error } = await supabase.auth.getSession();
+            
+            if (session) {
+                // 已有有效会话
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                loadChecklist();
+            } else {
+                // 无有效会话
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('main-app').classList.add('hidden');
+            }
+            
+            // 隐藏加载界面
+            document.getElementById('loading-screen').classList.add('hidden');
+            authChecked = true;
+        }
+
+        // 修改Auth状态监听
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if (!authChecked) return; // 跳过初始化时的重复触发
+            
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                if (event === 'SIGNED_IN') loadChecklist();
+            } else if (event === 'SIGNED_OUT') {
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('main-app').classList.add('hidden');
+            }
         });
+
+        // 在页面加载时初始化
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        async function updateStatus(itemId, currentStatus) {
+            const statuses = ['pending', 'passed', 'failed'];
+            const newStatus = statuses[(statuses.indexOf(currentStatus) + 1) % 3];
+            
+            try {
+                const btn = document.querySelector(`button[onclick="updateStatus('${itemId}', '${currentStatus}')"]`);
+                btn.classList.add('loading');
+                btn.disabled = true;
+
+                const { error } = await supabase
+                    .from('check_items')
+                    .update({ status: newStatus })
+                    .eq('id', itemId);
+
+                if (error) throw error;
+
+                btn.className = `status-btn ${newStatus}`;
+                btn.textContent = newStatus;
+                btn.onclick = () => updateStatus(itemId, newStatus);
+                
+                showAlert('状态更新成功', 'success');
+            } catch (error) {
+                showAlert(`状态更新失败: ${error.message}`);
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
     </script>
+
+    <div id="global-alert"></div>
+
 </body>
 </html>
