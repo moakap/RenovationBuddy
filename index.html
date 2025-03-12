@@ -3,23 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>装修验收</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <title>装修验收助手</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .container { max-width: 500px; margin: auto; padding: 20px; }
+        .hidden { display: none; }
+        button { padding: 10px; margin: 10px; cursor: pointer; }
+        ul { list-style-type: none; padding: 0; }
+        li { padding: 10px; background: #f4f4f4; margin: 5px 0; cursor: pointer; }
+    </style>
+    
 </head>
 <body>
-    <header>
-        <h1>装修验收</h1>
-        <button id="login-btn">登录</button>
-    </header>
-    <main>
-        <h2>验收项目</h2>
-        <ul id="steps-list">
-            <!-- 验收步骤列表 -->
-        </ul>
-        <button id="add-step-btn">添加验收步骤</button>
-    </main>
-    <script src="app.js">
+    <div class="container">
+        <!-- 注册 & 登录 -->
+        <div id="auth-section">
+            <h2>欢迎使用装修验收助手</h2>
+            <input type="email" id="email" placeholder="邮箱">
+            <input type="password" id="password" placeholder="密码">
+            <button id="login-btn">登录</button>
+            <button id="signup-btn">注册</button>
+        </div>
+
+        <!-- 验收步骤列表 -->
+        <div id="steps-section" class="hidden">
+            <h2>验收步骤</h2>
+            <ul id="steps-list"></ul>
+            <button id="add-step-btn">添加新验收步骤</button>
+            <button id="view-results-btn">查看验收历史</button>
+            <button id="logout-btn">退出</button>
+        </div>
+
+        <!-- 录入验收结果 -->
+        <div id="verify-section" class="hidden">
+            <h2>验收步骤: <span id="step-name"></span></h2>
+            <textarea id="step-result" placeholder="填写验收结果..."></textarea>
+            <input type="file" id="image-upload" accept="image/*,video/*">
+            <button id="submit-btn">提交验收结果</button>
+            <button onclick="showSteps()">返回</button>
+        </div>
+
+        <!-- 查看验收结果 -->
+        <div id="results-section" class="hidden">
+            <h2>验收历史</h2>
+            <ul id="result-list"></ul>
+            <button onclick="showSteps()">返回</button>
+        </div>
+    </div>
+
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <script>
+        const supabaseUrl = 'https://ebcslqzdvqicnooeeljp.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViY3NscXpkdnFpY25vb2VlbGpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3Njc4NzYsImV4cCI6MjA1NzM0Mzg3Nn0.Z6n7UTkhzDEJYyeIzf5h89cmqon3upDeYvJE_xGW7PU';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        let currentStepId = null;
+
+        // 📌 检查登录状态
+        async function checkUser() {
+            const { data, error } = await supabase.auth.getUser();
+            if (data.user) {
+                showSteps();
+            } else {
+                showAuth();
+            }
+        }
+        checkUser();
+
+        // 📌 显示登录/注册界面
+        function showAuth() {
+            document.getElementById("auth-section").classList.remove("hidden");
+            document.getElementById("steps-section").classList.add("hidden");
+            document.getElementById("verify-section").classList.add("hidden");
+            document.getElementById("results-section").classList.add("hidden");
+        }
+
+        // 📌 显示验收步骤
+        function showSteps() {
+            document.getElementById("auth-section").classList.add("hidden");
+            document.getElementById("steps-section").classList.remove("hidden");
+            document.getElementById("verify-section").classList.add("hidden");
+            document.getElementById("results-section").classList.add("hidden");
+            fetchSteps();
+        }
+
+        // 📌 显示验收详情
+        function showVerify(stepId, stepName) {
+            currentStepId = stepId;
+            document.getElementById("step-name").textContent = stepName;
+            document.getElementById("steps-section").classList.add("hidden");
+            document.getElementById("verify-section").classList.remove("hidden");
+        }
+
+        // 📌 显示验收历史
+        function showResults() {
+            document.getElementById("steps-section").classList.add("hidden");
+            document.getElementById("results-section").classList.remove("hidden");
+            fetchResults();
+        }
+
+        // 📌 处理用户注册
+        document.getElementById("signup-btn").addEventListener("click", async () => {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            await supabase.auth.signUp({ email, password });
+            alert("注册成功，请登录");
+        });
+
+        // 📌 处理用户登录
+        document.getElementById("login-btn").addEventListener("click", async () => {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) alert("登录失败：" + error.message);
+            else showSteps();
+        });
+
+        // 📌 获取验收步骤
+        async function fetchSteps() {
+            const { data, error } = await supabase.from("steps").select("*");
+            if (error) return;
+            const stepsList = document.getElementById("steps-list");
+            stepsList.innerHTML = "";
+            data.forEach(step => {
+                const li = document.createElement("li");
+                li.textContent = step.name;
+                li.onclick = () => showVerify(step.id, step.name);
+                stepsList.appendChild(li);
+            });
+        }
+
+        // 📌 添加验收步骤
+        document.getElementById("add-step-btn").addEventListener("click", async () => {
+            const name = prompt("请输入新的验收步骤名称");
+            if (!name) return;
+            await supabase.from("steps").insert([{ name }]);
+            fetchSteps();
+        });
+
+        // 📌 提交验收结果
+        document.getElementById("submit-btn").addEventListener("click", async () => {
+            const resultText = document.getElementById("step-result").value;
+            const file = document.getElementById("image-upload").files[0];
+            let mediaUrl = "";
+
+            if (file) {
+                const { data, error } = await supabase.storage.from('uploads').upload(`uploads/${file.name}`, file);
+                if (!error) mediaUrl = `${supabaseUrl}/storage/v1/object/public/uploads/${data.path}`;
+            }
+
+            await supabase.from("results").insert([{ step_id: currentStepId, result: resultText, media_url: mediaUrl }]);
+            alert("提交成功！");
+            showSteps();
+        });
+
+        // 📌 获取验收历史
+        async function fetchResults() {
+            const { data, error } = await supabase.from("results").select("*");
+            if (error) return;
+            const resultList = document.getElementById("result-list");
+            resultList.innerHTML = "";
+            data.forEach(result => {
+                const li = document.createElement("li");
+                li.innerHTML = `<p>${result.result}</p>${result.media_url ? `<img src="${result.media_url}" width="100">` : ""}`;
+                resultList.appendChild(li);
+            });
+        }
+
+        // 📌 退出登录
+        document.getElementById("logout-btn").addEventListener("click", async () => {
+            await supabase.auth.signOut();
+            showAuth();
+        });
     </script>
 </body>
 </html>
