@@ -1,117 +1,844 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>装修验收助手</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>装修验收助手</title>
     <style>
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        .hidden { display: none; }
-        .check-item { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; }
-        .status-btn { padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; }
-        .pending { background-color: #ffd700; }
-        .passed { background-color: #90EE90; }
-        .failed { background-color: #ff6961; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-content { background: white; padding: 20px; margin: 20% auto; width: 80%; }
-        .loading { opacity: 0.7; pointer-events: none; }
-        @keyframes fadeOut { 0% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; } }
+        :root {
+            --primary: #2196F3;
+            --success: #4CAF50;
+            --danger: #f44336;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, sans-serif;
+            padding: 16px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .add-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        .project-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .status-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin-right: 12px;
+            background: var(--danger);
+        }
+
+        .status-dot.checked {
+            background: var(--success);
+        }
+
+        .upload-btn {
+            margin-left: auto;
+            background: none;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        /* 新增登录界面样式 */
+        .auth-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .auth-form button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* 新增步骤相关样式 */
+        .step-controls {
+            margin-top: 16px;
+            border-top: 1px solid #eee;
+            padding-top: 12px;
+        }
+
+        .step-input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .step-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .step-action-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .steps-list {
+            margin-top: 12px;
+        }
+
+        /* 验收记录样式 */
+        .check-record {
+            margin: 12px 0;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .check-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .check-date {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .check-result {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .result-pass {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .result-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .media-thumbnails {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .media-thumb {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* 新增验收表单样式 */
+        .check-form {
+            margin-top: 16px;
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        /* 添加空状态样式 */
+        .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .empty img {
+            width: 120px;
+            opacity: 0.6;
+            margin-bottom: 20px;
+        }
+
+        .error {
+            color: #dc3545;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #f8d7da;
+            border-radius: 8px;
+            background: #fff5f5;
+        }
+
+        /* 添加模态框背景点击关闭效果 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
     </style>
 </head>
 <body>
-    <div id="loading-screen" class="container hidden">正在验证登录状态...</div>
-    
-    <div id="auth-section" class="container">
-        <h1>装修验收助手</h1>
-        <form onsubmit="return false;">
-            <input type="email" id="email" placeholder="电子邮箱" required>
-            <input type="password" id="password" placeholder="密码" required>
-            <button type="button" onclick="handleLogin()">登录</button>
-            <button type="button" onclick="handleSignup()">注册</button>
-        </form>
+    <!-- 登录界面 -->
+    <div id="authContainer" class="auth-container">
+        <div id="loginForm" class="auth-form">
+            <h2>用户登录</h2>
+            <input type="email" id="loginEmail" placeholder="电子邮箱">
+            <input type="password" id="loginPassword" placeholder="密码">
+            <button onclick="handleLogin()">登录</button>
+            <p style="margin-top:12px;">
+                <a href="javascript:showRegisterForm()">注册新账号</a> |
+                <a href="javascript:showResetForm()">忘记密码</a>
+            </p>
+        </div>
+
+        <!-- 注册界面 -->
+        <div id="registerForm" class="auth-form hidden">
+            <h2>用户注册</h2>
+            <input type="email" id="registerEmail" placeholder="电子邮箱">
+            <input type="password" id="registerPassword" placeholder="密码（至少6位）">
+            <button onclick="handleRegister()">注册</button>
+            <p style="margin-top:12px;">
+                <a href="javascript:showLoginForm()">返回登录</a>
+            </p>
+        </div>
+
+        <!-- 密码重置界面 -->
+        <div id="resetForm" class="auth-form hidden">
+            <h2>重置密码</h2>
+            <input type="email" id="resetEmail" placeholder="注册邮箱">
+            <button onclick="handlePasswordReset()">发送重置邮件</button>
+            <p style="margin-top:12px;">
+                <a href="javascript:showLoginForm()">返回登录</a>
+            </p>
+        </div>
     </div>
-    
-    <div id="main-app" class="container hidden">
-        <h1>装修验收助手 <button onclick="logout()">登出</button></h1>
-        <input type="text" id="item-name" placeholder="项目名称">
-        <textarea id="item-desc" placeholder="项目描述"></textarea>
-        <button onclick="addCheckItem()">添加验收项</button>
-        <div id="checklist"></div>
+
+    <!-- 主内容 -->
+    <div id="mainContainer" class="container hidden">
+        <div style="text-align:right; margin-bottom:16px;">
+            欢迎，<span id="userEmail"></span>
+            <button onclick="handleLogout()" style="margin-left:8px;">退出登录</button>
+        </div>
+        <button class="add-btn" onclick="showProjectForm()">+ 新建验收项目</button>
+        <div id="projectsList"></div>
+
+        <!-- 新增步骤表单弹窗 -->
+        <div id="stepFormModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <h3>添加验收步骤</h3>
+                <input type="text" id="stepName" 
+                       placeholder="步骤名称（例如：水电验收）"
+                       class="step-input">
+                <button onclick="createStep()" class="step-action-btn">添加步骤</button>
+                <button onclick="closeStepForm()" class="step-action-btn">取消</button>
+            </div>
+        </div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+
+    <!-- 项目表单弹窗 -->
+    <div id="projectForm" class="modal" style="display:none;">
+        <div class="modal-content">
+            <input type="text" id="projectName" placeholder="项目名称">
+            <button onclick="createProject()">创建</button>
+        </div>
+    </div>
+
+    <!-- 验收表单 -->
+    <div id="checkFormModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h3>提交验收结果</h3>
+            <div class="check-form">
+                <select id="checkResult" class="step-input">
+                    <option value="pass">通过</option>
+                    <option value="fail">不通过</option>
+                </select>
+                <textarea id="checkComment" class="step-input" placeholder="验收备注"></textarea>
+                <input type="file" id="checkMedia" multiple accept="image/*,video/*" class="step-input">
+                <button onclick="submitCheck()" class="step-action-btn">提交验收</button>
+                <button onclick="closeCheckForm()" class="step-action-btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.min.js"></script>
+
     <script>
+        // Supabase配置
         const SUPABASE_URL = 'https://ebcslqzdvqicnooeeljp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViY3NscXpkdnFpY25vb2VlbGpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3Njc4NzYsImV4cCI6MjA1NzM0Mzg3Nn0.Z6n7UTkhzDEJYyeIzf5h89cmqon3upDeYvJE_xGW7PU';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function getCurrentUser() {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
+                console.warn('用户会话异常:', error?.message || '用户未登录');
+                await supabase.auth.signOut();
+                return null;
+            }
+            return user;
+        }
+        
+        // 初始化认证状态
+        supabase.auth.onAuthStateChange((event, session) => {
+            console.log('Auth state changed:', event);
+            checkAuthState();
+        });
+
+        // 页面加载时检查登录状态
+        async function checkAuthState() {
+            try {
+                // 显式获取最新用户状态
+                const user = await getCurrentUser();
+                if (!user) return;
+                
+                if (user) {
+                    document.getElementById('mainContainer').classList.remove('hidden');
+                    document.getElementById('authContainer').classList.add('hidden');
+                    document.getElementById('userEmail').textContent = user.email;
+                    
+                    // 添加延时确保会话恢复
+                    setTimeout(async () => {
+                        await loadProjects(user); // 显式传递用户对象
+                    }, 500);
+                } else {
+                    document.getElementById('mainContainer').classList.add('hidden');
+                    document.getElementById('authContainer').classList.remove('hidden');
+                    showLoginForm();
+                }
+            } catch (error) {
+                console.error('认证状态检查失败:', error);
+                alert('系统初始化失败，请刷新页面');
+            }
+        }
+
+        // 登录处理
         async function handleLogin() {
             try {
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
                 if (error) throw error;
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-                loadChecklist();
+                
+                // 显式传递用户对象
+                await loadProjects(data.user);
             } catch (error) {
-                alert(`登录失败: ${error.message}`);
+                alert('登录失败: ' + error.message);
             }
         }
 
-        async function handleSignup() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const { error } = await supabase.auth.signUp({ email, password });
-            if (error) alert(error.message);
-            else alert('确认邮件已发送，请验证后登录');
+        // 注册处理
+        async function handleRegister() {
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password
+            });
+
+            if (error) {
+                alert('注册失败: ' + error.message);
+                return;
+            }
+            alert('注册成功，请检查邮箱验证邮件');
+            showLoginForm();
         }
-        
-        async function logout() {
+
+        // 退出登录
+        async function handleLogout() {
             await supabase.auth.signOut();
-            document.getElementById('auth-section').classList.remove('hidden');
-            document.getElementById('main-app').classList.add('hidden');
+            checkAuthState();
         }
 
-        async function loadChecklist() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { data: items } = await supabase.from('check_items').select('*').eq('user_id', user.id);
-            const checklist = document.getElementById('checklist');
-            checklist.innerHTML = items.map(item => `
-                <div class="check-item">
-                    <h3>${item.name}</h3>
-                    <p>${item.description}</p>
-                    <button class="status-btn ${item.status}" onclick="updateStatus('${item.id}', '${item.status}')">${item.status}</button>
-                </div>`).join('');
+        // 界面切换函数
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('resetForm').classList.add('hidden');
         }
-        
-        async function addCheckItem() {
-            const name = document.getElementById('item-name').value;
-            const desc = document.getElementById('item-desc').value;
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { error } = await supabase.from('check_items').insert([{ name, description: desc, user_id: user.id, status: 'pending' }]);
-            if (!error) loadChecklist();
+
+        function showRegisterForm() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('resetForm').classList.add('hidden');
         }
-        
-        async function updateStatus(itemId, currentStatus) {
-            const statuses = ['pending', 'passed', 'failed'];
-            const newStatus = statuses[(statuses.indexOf(currentStatus) + 1) % 3];
-            const { error } = await supabase.from('check_items').update({ status: newStatus }).eq('id', itemId);
-            if (!error) loadChecklist();
+
+        function showResetForm() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('resetForm').classList.remove('hidden');
         }
-        
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-                loadChecklist();
-            } else {
-                document.getElementById('auth-section').classList.remove('hidden');
-                document.getElementById('main-app').classList.add('hidden');
+
+        // 初始化检查
+        checkAuthState();
+
+        // 加载项目
+        async function loadProjects() {
+            try {
+                const { data, error } = await supabase
+                    .from('projects')
+                    .select(`
+                        id,
+                        name,
+                        steps (
+                            id,
+                            name,
+                            step_checks (
+                                id,
+                                result,
+                                comment,
+                                created_at,
+                                media:check_media(media_url)
+                            )
+                        )
+                    `)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                
+                // 确保始终传递有效数组
+                renderProjects(data || []);
+            } catch (error) {
+                console.error('项目加载失败:', error);
+                alert('数据加载失败: ' + error.message);
+                renderProjects([]); // 确保传入空数组
             }
-        });
+        }
+
+        // 创建项目
+        async function createProject() {
+            try {
+                const name = document.getElementById('projectName').value;
+                if (!name.trim()) {
+                    alert('项目名称不能为空');
+                    return;
+                }
+
+                // 实时获取当前用户
+                const user = await getCurrentUser();                
+                if (!user) {
+                    alert('用户未登录，请重新登录');
+                    return handleLogout();
+                }
+
+                // 插入项目数据
+                const { data, error } = await supabase
+                    .from('projects')
+                    .insert([{
+                        name: name.trim(),
+                        user_id: user.id  // 使用实时获取的用户ID
+                    }])
+                    .select();
+
+                if (error) throw error;
+
+                // 成功处理
+                if (data && data.length > 0) {
+                    await loadProjects();
+                    document.getElementById('projectForm').style.display = 'none';
+                    document.getElementById('projectName').value = '';
+                }
+            } catch (error) {
+                console.error('创建项目失败:', error);
+                alert(`操作失败: ${error.message}`);
+            }
+        }
+
+        // 上传文件
+        async function uploadFile(stepId, file) {
+            const user = await getCurrentUser();                
+            if (!user) {
+                alert('用户未登录，请重新登录');
+                return handleLogout();
+            }
+
+            const fileName = `${user.id}/${Date.now()}_${file.name}`;
+            const { data, error } = await supabase.storage
+                .from('step_media')
+                .upload(fileName, file);
+
+            if(data) {
+                await supabase
+                    .from('steps')
+                    .update({ media_url: data.path })
+                    .eq('id', stepId);
+            }
+        }
+
+        // 新增全局状态
+        let currentProjectId = null;
+
+        // 全局状态
+        let currentStepId = null;
+
+        // 项目渲染逻辑
+        function renderProjects(projects) {
+            const container = document.getElementById('projectsList');
+            container.innerHTML = '';
+
+            // 安全校验
+            if (!Array.isArray(projects)) {
+                console.warn('无效的项目数据:', projects);
+                return container.innerHTML = '<div class="empty">暂无项目</div>';
+            }
+
+            // 处理空状态
+            if (projects.length === 0) {
+                return container.innerHTML = `
+                    <div class="empty">
+                        <img src="empty-state.svg" alt="空状态">
+                        <p>点击上方按钮创建第一个验收项目</p>
+                    </div>
+                `;
+            }
+
+            // 安全渲染
+            try {
+                projects.forEach(project => {
+                    const card = document.createElement('div');
+                    card.className = 'project-card';
+                    card.innerHTML = `
+                        <h3>${escapeHtml(project.name)}</h3>
+                        ${renderSteps(project.steps || [])}
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('渲染错误:', error);
+                container.innerHTML = '<div class="error">数据渲染异常</div>';
+            }
+        }
+
+        // 添加HTML转义函数防御XSS
+        function escapeHtml(unsafe) {
+            return unsafe?.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;") || '';
+        }
+
+        // 步骤渲染函数
+        function renderSteps(steps) {
+            return steps.map(step => `
+                <div class="step-item" data-step-id="${step.id}">
+                    <div class="step-info">
+                        <span>${step.name}</span>
+                        <button onclick="showCheckForm('${step.id}')" class="step-action-btn">
+                            提交验收
+                        </button>
+                    </div>
+                    ${renderCheckRecords(step.step_checks)}
+                </div>
+            `).join('');
+        }
+
+        // 渲染验收记录
+        function renderCheckRecords(checks) {
+            return checks.map(check => `
+                <div class="check-record">
+                    <div class="check-header">
+                        <span class="check-date">${new Date(check.created_at).toLocaleString()}</span>
+                        <span class="check-result ${check.result === 'pass' ? 'result-pass' : 'result-fail'}">
+                            ${check.result === 'pass' ? '通过' : '不通过'}
+                        </span>
+                    </div>
+                    ${check.comment ? `<p>${check.comment}</p>` : ''}
+                    <div class="media-thumbnails">
+                        ${check.media.map(m => `
+                            <img src="${getMediaUrl(m.media_url)}" 
+                                class="media-thumb" 
+                                onclick="showMediaPreview('${m.media_url}')">
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 显示验收表单
+        function showCheckForm(stepId) {
+            currentStepId = stepId;
+            document.getElementById('checkFormModal').style.display = 'block';
+        }
+
+        // 管壁验收表单
+        function closeCheckForm() {
+            // 隐藏表单弹窗
+            document.getElementById('checkFormModal').style.display = 'none';
+            
+            // 清空表单内容
+            document.getElementById('checkResult').value = 'pass';
+            document.getElementById('checkComment').value = '';
+            document.getElementById('checkMedia').value = '';
+            
+            // 重置当前步骤ID
+            currentStepId = null;
+        }
+
+        // 提交验收
+        async function submitCheck() {
+            try {
+                const user = await getCurrentUser();
+                if (!user) return;
+
+                // 创建验收记录
+                const checkResult = document.getElementById('checkResult').value;
+                const checkComment = document.getElementById('checkComment').value;
+                const files = Array.from(document.getElementById('checkMedia').files);
+
+                // 创建验收记录
+                const { data: checkData, error: checkError } = await supabase
+                    .from('step_checks')
+                    .insert([{
+                        step_id: currentStepId,
+                        user_id: user.id,
+                        result: checkResult,
+                        comment: checkComment
+                    }])
+                    .select()
+                    .single();
+
+                if (checkError) throw checkError;
+
+                // 上传多个文件
+                const uploadPromises = files.map(file => 
+                    uploadCheckMedia(checkData.id, file)
+                );
+                
+                await Promise.all(uploadPromises);
+                
+                // 刷新数据
+                await loadProjects();
+                closeCheckForm();
+            } catch (error) {
+                console.error('验收提交失败:', error);
+                alert(`操作失败: ${error.message}`);
+            }
+        }
+
+        // 上传媒体文件
+        async function uploadCheckMedia(checkId, file) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${checkId}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+
+            // 上传到存储
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('check_media')
+                .upload(fileName, file);
+
+            if (uploadError) throw uploadError;
+
+            // 保存记录
+            const { error } = await supabase
+                .from('check_media')
+                .insert([{
+                    check_id: checkId,
+                    media_url: uploadData.path
+                }]);
+
+            if (error) throw error;
+        }
+
+        // 获取媒体URL
+        function getMediaUrl(path) {
+            return supabase.storage
+                .from('check_media')
+                .getPublicUrl(path).data.publicUrl;
+        }
+
+        // 新增步骤管理函数
+        function showStepForm(projectId) {
+            currentProjectId = projectId;
+            document.getElementById('stepFormModal').style.display = 'block';
+        }
+
+        function closeStepForm() {
+            document.getElementById('stepFormModal').style.display = 'none';
+            currentProjectId = null;
+        }
+
+        async function createStep() {
+            const stepName = document.getElementById('stepName').value;
+            if (!stepName.trim()) {
+                alert('请输入步骤名称');
+                return;
+            }
+
+            try {
+                const user = await getCurrentUser();
+                if (!user) return;
+
+                const { data, error } = await supabase
+                    .from('steps')
+                    .insert([{
+                        name: stepName.trim(),
+                        project_id: currentProjectId,
+                        status: false,
+                        user_id: user.id
+                    }])
+                    .select();
+
+                if (error) throw error;
+
+                if (data.length > 0) {
+                    await loadProjects();
+                    closeStepForm();
+                    document.getElementById('stepName').value = '';
+                }
+            } catch (error) {
+                console.error('创建步骤失败:', error);
+                alert(`操作失败: ${error.message}`);
+            }
+        }
+
+
+        function showProjectForm() {
+            document.getElementById('projectForm').style.display = 'block';
+        }
+
+        // 步骤状态切换
+        async function toggleStep(stepId) {
+            try {
+                const { data: stepData } = await supabase
+                    .from('steps')
+                    .select('status')
+                    .eq('id', stepId)
+                    .single();
+
+                const { data, error } = await supabase
+                    .from('steps')
+                    .update({ status: !stepData.status })
+                    .eq('id', stepId)
+                    .select();
+
+                if (error) throw error;
+                
+                // 局部更新UI
+                const stepElement = document.querySelector(`[data-step-id="${stepId}"]`);
+                if (stepElement) {
+                    const statusDot = stepElement.querySelector('.status-dot');
+                    statusDot.classList.toggle('checked');
+                }
+            } catch (error) {
+                console.error('状态更新失败:', error);
+                alert('操作失败，请稍后重试');
+            }
+        }
+
+        // 完善文件上传处理
+        async function handleStepUpload(stepId, file) {
+            if (!file) return;
+
+            try {
+                const user = await getCurrentUser();
+                if (!user) return;
+
+                // 生成唯一文件名
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${user.id}/${stepId}_${Date.now()}.${fileExt}`;
+
+                // 上传文件
+                const { data: uploadData, error: uploadError } = 
+                    await supabase.storage
+                        .from('step_media')
+                        .upload(fileName, file);
+
+                if (uploadError) throw uploadError;
+
+                // 更新步骤记录
+                const { error: updateError } = await supabase
+                    .from('steps')
+                    .update({ media_url: uploadData.path })
+                    .eq('id', stepId);
+
+                if (updateError) throw updateError;
+
+                // 更新UI指示器
+                const stepElement = document.querySelector(`[data-step-id="${stepId}"]`);
+                if (stepElement) {
+                    const indicator = stepElement.querySelector('.media-indicator') 
+                        || document.createElement('span');
+                    indicator.className = 'media-indicator';
+                    indicator.textContent = '✅';
+                    stepElement.querySelector('span').after(indicator);
+                }
+            } catch (error) {
+                console.error('文件上传失败:', error);
+                alert(`上传失败: ${error.message}`);
+            }
+        }
     </script>
 </body>
 </html>
